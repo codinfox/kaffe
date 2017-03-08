@@ -7,13 +7,15 @@ class LayerBase(ABC):
     """ Abstract base class for layers """
 
     @abstractmethod
-    def setup(self, bottom_shape, params):
+    def setup(self, bottom_shape, params, grads):
         """ Setup the layer and do some preparation
 
         This method will instantiate the parameters according to
         its own specification and bottom_shape.
 
+        :param bottom_shape: the output shape from the previous layer
         :param params: the parameter entry in network
+        :param grads: the gradient entry in network
         :return: the output size of the current layer
         """
         pass
@@ -85,6 +87,7 @@ class FullyConnectedLayer(LayerBase):
 
         return dx
 
+
 class SigmoidActivationLayer(LayerBase):
     """ Sigmoid activation function as a layer """
 
@@ -92,7 +95,7 @@ class SigmoidActivationLayer(LayerBase):
         self.input = None
         self.output = None
 
-    def setup(self, bottom_shape, params):
+    def setup(self, bottom_shape, params, grads):
         return bottom_shape
 
     def forward(self, bottom):
@@ -105,3 +108,45 @@ class SigmoidActivationLayer(LayerBase):
         dx = top * self.input * (1. - self.input)
 
         return dx
+
+
+class SoftmaxLayer(LayerBase):
+    """ Softmax layer
+
+    In Softmax layer, we always assume the input is a one dimensional vector
+    (this is not a hard constraint, and softmax with other shapes are very
+    useful as well in applications)
+    """
+
+    def __init__(self):
+        self.input = None
+        self.output = None
+
+    def setup(self, bottom_shape, params, grads):
+        return bottom_shape
+
+    def forward(self, bottom):
+        self.input = bottom
+        # we substract the max to avoid numerical issue
+        normalized_bottom = bottom - np.max(bottom)
+        exp = np.exp(normalized_bottom)
+        self.output = exp / np.sum(exp)
+
+        return self.output
+
+    def backward(self, top):
+        # we don't implement this method here, but it is a very good exercise
+        # to implement it yourself to see the difference this makes with the
+        # SoftmaxCrossEntropyLossLayer
+        pass
+
+
+class CrossEntropyLayer(LayerBase):
+    """ Cross entropy layer
+
+    We don't implement this layer but recommend that you try to implement it
+    yourself. This is a very good exercise. When completed, combine this and
+    the Softmax layer to train a network. See the difference it makes with the
+    SoftmaxCrossEntropyLossLayer
+    """
+    pass
