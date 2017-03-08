@@ -44,16 +44,22 @@ class FullyConnectedLayer(LayerBase):
     def __init__(self, n_neurons):
         self.n_neurons = n_neurons
         self.params = None
+        self.grads = None
         self.input = None
         self.output = None
 
-    def setup(self, bottom_shape, params):
+    def setup(self, bottom_shape, params, grads):
         n_input = reduce((lambda x,y: x * y), bottom_shape)
 
         # setup the parameters
         params['W'] = np.zeros((n_input, self.n_neurons))
         params['b'] = np.zeros((self.n_neurons, 1))
         self.params = params
+
+        # setup the grads
+        grads['W'] = np.zeros((n_input, self.n_neurons))
+        grads['b'] = np.zeros((self.n_neurons, 1))
+        self.grads = grads
 
         return (n_neurons, 1)
 
@@ -74,5 +80,28 @@ class FullyConnectedLayer(LayerBase):
         dW = self.input.dot(top.T)
         db = top.copy()
 
-        return (dx, dW, db)
+        self.grads['W'] = dW
+        self.grads['b'] = db
 
+        return dx
+
+class SigmoidActivationLayer(LayerBase):
+    """ Sigmoid activation function as a layer """
+
+    def __init__(self):
+        self.input = None
+        self.output = None
+
+    def setup(self, bottom_shape, params):
+        return bottom_shape
+
+    def forward(self, bottom):
+        self.input = bottom
+        self.output = 1. / (1. + np.exp(-bottom))
+
+        return self.output
+
+    def backward(self, top):
+        dx = top * self.input * (1. - self.input)
+
+        return dx

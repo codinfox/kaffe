@@ -9,7 +9,7 @@ class Network(object):
         :param layers: a list of configured layers
         """
         self.layers = layers
-        self.grads = [None] * len(layers)
+        self.grads = []
         self.params = []
 
         # setup the layers
@@ -20,8 +20,9 @@ class Network(object):
 
             # we add empty dict to be filled by layer setup method
             self.params.append({})
+            self.grads.append({})
             # it works because of pass by ref
-            bottom_shape = layer.setup(bottom_shape, self.params[-1])
+            bottom_shape = layer.setup(bottom_shape, self.params[-1], self.grads[-1])
 
     def forward(self):
         """ Run forward pass across the network """
