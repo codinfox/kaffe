@@ -63,14 +63,14 @@ class FullyConnectedLayer(LayerBase):
         grads['b'] = np.zeros((self.n_neurons, 1))
         self.grads = grads
 
-        return (n_neurons, 1)
+        return (self.n_neurons, 1)
 
     def forward(self, bottom):
         W = self.params['W']
         b = self.params['b']
 
         self.input = bottom
-        self.output = W.T.dot(bottom) + b
+        self.output = W.T.dot(bottom.reshape(-1,1)) + b
 
         return self.output
 
@@ -78,8 +78,8 @@ class FullyConnectedLayer(LayerBase):
         W = self.params['W']
         b = self.params['b']
 
-        dx = top.T.dot(W)
-        dW = self.input.dot(top.T)
+        dx = W.dot(top).reshape(*self.input.shape)
+        dW = self.input.reshape(-1,1).dot(top.T).reshape(*W.shape)
         db = top.copy()
 
         self.grads['W'] = dW
@@ -105,7 +105,7 @@ class SigmoidActivationLayer(LayerBase):
         return self.output
 
     def backward(self, top):
-        dx = top * self.input * (1. - self.input)
+        dx = top * self.output * (1. - self.output)
 
         return dx
 
