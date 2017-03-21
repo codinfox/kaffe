@@ -1,7 +1,12 @@
 import layers
 
 class Network(object):
-    """ Network wrapper that controls training and testing """
+    """ Network wrapper that controls training and testing
+
+    The first layer will always provide data and labels for the whole network,
+    and the last layer will always be optimization objective. This is just a
+    design choice, not general.
+    """
 
     def __init__(self, layers):
         """ Initiate the network with a list of layers

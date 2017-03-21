@@ -7,6 +7,7 @@ class TestBase(unittest.TestCase):
     def setUp(self):
         self.params = {}
         self.grads = {}
+        np.random.seed(0)
 
     def loss(self, bottom):
         """ L2 loss (0.5*x^Tx)
@@ -18,16 +19,27 @@ class TestBase(unittest.TestCase):
         return (0.5 * inp.T.dot(inp), bottom)
 
     def checkGradientWrtX(self, layer, bottom_shape, eps,
-            ana_grad_x, bottom, thresh):
+            ana_grad_x, args, thresh):
+        if isinstance(layer, layers.LossLayerBase):
+            bottom, label = args
+        else:
+            bottom = args
+
         for idx, _ in np.ndenumerate(bottom):
             bottom_copy = bottom.copy()
             bottom_copy[idx] += eps # a new input
-            out_1 = layer.forward(bottom_copy)
+            if isinstance(layer, layers.LossLayerBase):
+                out_1 = layer.forward((bottom_copy, label))
+            else:
+                out_1 = layer.forward(bottom_copy)
             loss_1, _ = self.loss(out_1)
 
             bottom_copy = bottom.copy()
             bottom_copy[idx] -= eps # a new input
-            out_2 = layer.forward(bottom_copy)
+            if isinstance(layer, layers.LossLayerBase):
+                out_2 = layer.forward((bottom_copy, label))
+            else:
+                out_2 = layer.forward(bottom_copy)
             loss_2, _ = self.loss(out_2)
 
             neu_grad_x = (loss_1 - loss_2) * 0.5 / eps
@@ -64,7 +76,12 @@ class TestBase(unittest.TestCase):
         layer.setup(bottom_shape, self.params, self.grads)
 
         # random initialization
-        bottom = np.random.rand(*bottom_shape)
+        bottom = (np.random.rand(*bottom_shape) - 0.5) * 10
+        if isinstance(layer, layers.LossLayerBase):
+            label = np.zeros((bottom_shape[0], 1))
+            label[0] = 1.0
+            bottom += 5.0
+            bottom = (bottom / np.sum(bottom), label)
         for k in self.params.keys():
             self.params[k] = np.random.rand(*self.params[k].shape)
 
@@ -103,8 +120,30 @@ class TestSigmoidActivationLayer(TestBase):
 
     def testGradientX(self):
         layer = layers.SigmoidActivationLayer()
-        bottom_shape = (2, 1)
+        bottom_shape = (10, 1)
         self.checkGradient(layer, bottom_shape)
+
+# class TestSoftmaxLayer(TestBase):
+#
+#     def testGradientX(self):
+#         layer = layers.SoftmaxLayer()
+#         bottom_shape = (10, 1)
+#         self.checkGradient(layer, bottom_shape)
+#
+
+# class TestCrossEntropy(TestBase):
+#
+#     def testGradientX(self):
+#         layer = layers.CrossEntropyLossLayer()
+#         bottom_shape = (10, 1)
+#         self.checkGradient(layer, bottom_shape)
+
+class TestSoftmaxWithCrossEntropyLossLayer(TestBase):
+
+     def testGradientX(self):
+         layer = layers.SoftmaxWithCrossEntropyLossLayer()
+         bottom_shape = (10, 1)
+         self.checkGradient(layer, bottom_shape)
 
 if __name__ == '__main__':
     unittest.main()

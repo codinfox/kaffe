@@ -40,6 +40,26 @@ class LayerBase(ABC):
         pass
 
 
+class DataLayerBase(LayerBase):
+    """ Base class for data input layers
+
+    Data Layers will does not have backward methods, and the forward method
+    will return a tuple (data, label)
+    """
+
+    def backward(self, top):
+        pass
+
+
+class LossLayerBase(LayerBase):
+    """ Base class for training loss layers
+
+    Forward method of loss layers will take a tuple (bottom_data, label)
+    instead of just bottom
+    """
+    pass
+
+
 class FullyConnectedLayer(LayerBase):
     """ Fully connected layer that implements full connections """
 
@@ -135,18 +155,70 @@ class SoftmaxLayer(LayerBase):
         return self.output
 
     def backward(self, top):
-        # we don't implement this method here, but it is a very good exercise
-        # to implement it yourself to see the difference this makes with the
-        # SoftmaxCrossEntropyLossLayer
         pass
+        # sig = self.output
+        # temp = top * sig
+        # sum_temp = np.sum(temp)
+        # out = temp - sig * sum_temp
+
+        # return out
 
 
-class CrossEntropyLayer(LayerBase):
-    """ Cross entropy layer
+class CrossEntropyLossLayer(LossLayerBase):
+    """ Cross entropy layer """
 
-    We don't implement this layer but recommend that you try to implement it
-    yourself. This is a very good exercise. When completed, combine this and
-    the Softmax layer to train a network. See the difference it makes with the
-    SoftmaxCrossEntropyLossLayer
+    def __init__(self):
+        self.input = None
+        self.output = None
+        self.label = None
+
+    def setup(self, bottom_shape, params, grads):
+        return (1, 1)
+
+    def forward(self, args):
+        """ Forward method
+
+        :param args: (bottom_data, label), label is a one-hot vector
+        """
+        bottom, label = args
+        self.input = bottom
+        self.label = label
+        self.output = -np.sum(np.log(bottom) * label)
+
+        return self.output
+
+    def backward(self, top = 1.0):
+        return -1.0 * top * self.label / self.input
+
+
+class SoftmaxWithCrossEntropyLossLayer(LossLayerBase):
+    """ Softmax with Cross Entropy Loss
+
+    This layer combines softmax with Cross Entroy to provide numerically more
+    stable solution. This layer only support one dimensional input, and the
+    output is a scaler. This is just a design choice. It can be more general
+    than this.
+
+    Dunne, Rob A., and Norm A. Campbell.
+    'On the pairing of the softmax activation and cross-entropy penalty functions
+    and the derivation of the softmax activation function.'
+    Proc. 8th Aust. Conf. on the Neural Networks, Melbourne, 181. Vol. 185. 1997.
     """
-    pass
+
+    def __init__(self):
+        self.prob = None
+        self.label = None
+        self.softmax = SoftmaxLayer()
+
+    def setup(self, bottom_shape, params, grads):
+        return bottom_shape
+
+    def forward(self, args):
+        bottom, label = args
+        self.label = label
+        self.prob = self.softmax.forward(bottom)
+
+        return -np.sum(np.log(self.prob) * label)
+
+    def backward(self, top = 1.0):
+        return top * (self.prob - self.label)
