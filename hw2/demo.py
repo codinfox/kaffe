@@ -9,12 +9,12 @@ net = Network([
     layers.MNISTDataLayer(
         '/Users/zhli/Projects/kaffe/MNIST/MNIST_train.txt'),
     layers.FullyConnectedLayer(100),
-    layers.SigmoidActivationLayer(),
+    layers.ReLUActivationLayer(),
     layers.FullyConnectedLayer(10),
     layers.SoftmaxWithCrossEntropyLossLayer()
     ])
 
-losses = optimizers.SGD(net, iterations=200000).optimize()
+losses = optimizers.SGD(net, iterations=20000).optimize()
 
 def running_mean(l, N):
     """ Helper function, moving average
@@ -43,7 +43,7 @@ test_set_path = '/Users/zhli/Projects/kaffe/MNIST/MNIST_test.txt'
 test_net = Network([
     layers.MNISTDataLayer(test_set_path, shuffle = False),
     layers.FullyConnectedLayer(100),
-    layers.SigmoidActivationLayer(),
+    layers.ReLUActivationLayer(),
     layers.FullyConnectedLayer(10),
     layers.SoftmaxLayer()
     ])

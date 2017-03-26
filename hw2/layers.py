@@ -273,3 +273,21 @@ class MNISTDataLayer(DataLayerBase):
 
     def backward(self, top):
         return None
+
+
+class ReLUActivationLayer(LayerBase):
+    """ ReLU activation function as a layer """
+
+    def __init__(self):
+        self.input = None
+
+    def setup(self, bottom_shape, params, grads):
+        return bottom_shape
+
+    def forward(self, bottom):
+        self.input = bottom
+
+        return bottom * (bottom > 0.0).astype(np.float)
+
+    def backward(self, top):
+        return top * (self.input > 0.0).astype(np.float)
