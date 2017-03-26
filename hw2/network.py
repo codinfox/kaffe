@@ -37,7 +37,7 @@ class Network(object):
             # initialize momentum
             self.momentum.append(self.grads[-1].copy())
             for k in self.momentum[-1]:
-                self.momentum[-1][k] *= 0
+                self.momentum[-1][k] *= 0.0
 
         # Initialize weight
         def instantiate_weights(input_size, output_size):

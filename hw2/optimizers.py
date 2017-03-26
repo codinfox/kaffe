@@ -15,17 +15,19 @@ class SGD(OptimizerBase):
     """ Stochastic Gradient Descent (SGD) optimizer """
 
     def __init__(self, network, learning_rate = 0.01,
-                 iterations = -1, l2_regularize = True, momentum = 0.0):
+                 iterations = -1, weight_decay = 0.001, momentum = 0.0):
         """__init__
 
         :param network: the network to optimize
         :param learning_rate: learning rate
         :param iterations: maximum number of iterations, -1 is unlimited
+        :param weight_decay: weight decay
+        :param momentum: momentum
         """
         super().__init__(network)
         self.learning_rate = learning_rate
         self.iterations = iterations
-        self.l2_regularize = l2_regularize
+        self.weight_decay = weight_decay
         self.momentum = momentum
 
     def optimize(self):
@@ -43,9 +45,9 @@ class SGD(OptimizerBase):
             # update the weights
             for j in range(len(net.layers)):
                 for k in net.params[j]:
-                    grad = net.grads[j][k]
-                    if self.l2_regularize:
-                        grad += net.params[j][k]
+                    # no weight decay for bias
+                    grad = net.grads[j][k] + \
+                        (self.weight_decay * net.params[j][k] if k!='b' else 0.)
                     net.momentum[j][k] = \
                         self.momentum * net.momentum[j][k] - lr * grad
                     net.params[j][k] += net.momentum[j][k]
