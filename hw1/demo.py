@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from network import Network
 import layers
@@ -6,7 +7,7 @@ import optimizers
 
 net = Network([
     layers.MNISTDataLayer(
-        '/Users/zhli/Projects/kaffe/hw1/MNIST/MNIST_train.txt'),
+        '/Users/zhli/Projects/kaffe/MNIST/MNIST_train.txt'),
     layers.FullyConnectedLayer(100),
     layers.SigmoidActivationLayer(),
     layers.FullyConnectedLayer(10),
@@ -36,3 +37,26 @@ def running_mean(l, N):
 
 plt.plot(running_mean(losses, 1000))
 plt.show()
+
+# testing
+test_set_path = '/Users/zhli/Projects/kaffe/MNIST/MNIST_test.txt'
+test_net = Network([
+    layers.MNISTDataLayer(test_set_path, shuffle = False),
+    layers.FullyConnectedLayer(100),
+    layers.SigmoidActivationLayer(),
+    layers.FullyConnectedLayer(10),
+    layers.SoftmaxLayer()
+    ])
+
+test_net.restore(net.params)
+
+test_set = np.loadtxt(test_set_path, delimiter=',')
+test_label = test_set[:, -1].astype(np.int).reshape(-1)
+
+correct = 0
+for i in range(3000):
+    out = test_net.forward()
+    pred = np.argmax(out)
+    if pred == test_label[i]:
+        correct += 1
+print('Accuracy:', correct * 1.0 / 3000)

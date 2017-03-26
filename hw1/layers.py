@@ -227,7 +227,7 @@ class MNISTDataLayer(DataLayerBase):
     """ Layer to read and feed MNIST data to network
     """
 
-    def __init__(self, path):
+    def __init__(self, path, shuffle = True):
         """ Initialize the layer
 
         :param path: path to the dataset
@@ -236,6 +236,7 @@ class MNISTDataLayer(DataLayerBase):
         N = content.shape[0]
 
         self.number_of_entries = N
+        self.shuffle = shuffle
 
         self.data = content[:,:-1].T
         # translate digital label to one-hot label
@@ -243,12 +244,13 @@ class MNISTDataLayer(DataLayerBase):
         self.label = np.zeros((np.max(digit_label)+1, digit_label.shape[0]))
         self.label[digit_label, np.arange(digit_label.shape[0])] = 1
 
-        # generate shuffle index
-        shuffle_idx = np.random.permutation(np.arange(N))
-        # shuffle data
-        self.data = self.data[:, shuffle_idx]
-        # shuffle label
-        self.label = self.label[:, shuffle_idx]
+        if shuffle:
+            # generate shuffle index
+            shuffle_idx = np.random.permutation(np.arange(N))
+            # shuffle data
+            self.data = self.data[:, shuffle_idx]
+            # shuffle label
+            self.label = self.label[:, shuffle_idx]
 
         self.idx = 0
 
@@ -260,11 +262,12 @@ class MNISTDataLayer(DataLayerBase):
         lab = self.label[:,[self.idx]]
         self.idx += 1
         if self.idx == self.number_of_entries:
-            # re-shuffle
-            shuffle_idx = np.random.permutation(
-                    np.arange(self.number_of_entries))
-            self.data = self.data[:, shuffle_idx]
-            self.label = self.label[:, shuffle_idx]
+            if self.shuffle:
+                # re-shuffle
+                shuffle_idx = np.random.permutation(
+                        np.arange(self.number_of_entries))
+                self.data = self.data[:, shuffle_idx]
+                self.label = self.label[:, shuffle_idx]
             self.idx = 0
         return (out, lab)
 

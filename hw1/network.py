@@ -18,6 +18,9 @@ class Network(object):
         self.grads = []
         self.params = []
 
+        # make sure the first layer is always data layer
+        assert(isinstance(layers_list[0], layers.DataLayerBase))
+
         # setup the layers
         bottom_shape = None
         for layer in layers_list:
@@ -68,3 +71,15 @@ class Network(object):
         top = 1.0
         for layer in reversed(self.layers):
             top = layer.backward(top)
+
+    def restore(self, params):
+        """ Restore the weights
+
+        :param params: weights from other network with the same structure
+        """
+        for j in range(len(self.layers)):
+            for k in self.params[j]:
+                # we rely on python's object reference, so use some tricks to
+                # avoid breaking it
+                self.params[j][k] *= 0
+                self.params[j][k] += params[j][k]
