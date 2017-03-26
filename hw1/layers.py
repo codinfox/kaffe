@@ -211,7 +211,7 @@ class SoftmaxWithCrossEntropyLossLayer(LossLayerBase):
         self.softmax = SoftmaxLayer()
 
     def setup(self, bottom_shape, params, grads):
-        return bottom_shape
+        return (1,1)
 
     def forward(self, args):
         bottom, label = args
@@ -222,3 +222,51 @@ class SoftmaxWithCrossEntropyLossLayer(LossLayerBase):
 
     def backward(self, top = 1.0):
         return top * (self.prob - self.label)
+
+class MNISTDataLayer(DataLayerBase):
+    """ Layer to read and feed MNIST data to network
+    """
+
+    def __init__(self, path):
+        """ Initialize the layer
+
+        :param path: path to the dataset
+        """
+        content = np.loadtxt(path, delimiter=',')
+        N = content.shape[0]
+
+        self.number_of_entries = N
+
+        self.data = content[:,:-1].T
+        # translate digital label to one-hot label
+        digit_label = content[:, -1].astype(np.int).reshape(-1)
+        self.label = np.zeros((np.max(digit_label)+1, digit_label.shape[0]))
+        self.label[digit_label, np.arange(digit_label.shape[0])] = 1
+
+        # generate shuffle index
+        shuffle_idx = np.random.permutation(np.arange(N))
+        # shuffle data
+        self.data = self.data[:, shuffle_idx]
+        # shuffle label
+        self.label = self.label[:, shuffle_idx]
+
+        self.idx = 0
+
+    def setup(self, bottom_shape = None, params = None, grads = None):
+        return (self.data.shape[0], 1)
+
+    def forward(self, bottom = None):
+        out = self.data[:,[self.idx]]
+        lab = self.label[:,[self.idx]]
+        self.idx += 1
+        if self.idx == self.number_of_entries:
+            # re-shuffle
+            shuffle_idx = np.random.permutation(
+                    np.arange(self.number_of_entries))
+            self.data = self.data[:, shuffle_idx]
+            self.label = self.label[:, shuffle_idx]
+            self.idx = 0
+        return (out, lab)
+
+    def backward(self, top):
+        return None
