@@ -17,6 +17,7 @@ class Network(object):
         self.layers = layers_list
         self.grads = []
         self.params = []
+        self.momentum = []
 
         # make sure the first layer is always data layer
         assert(isinstance(layers_list[0], layers.DataLayerBase))
@@ -33,6 +34,10 @@ class Network(object):
             # it works because of pass by ref
             bottom_shape = layer.setup(bottom_shape, self.params[-1],
                                        self.grads[-1])
+            # initialize momentum
+            self.momentum.append(self.grads[-1].copy())
+            for k in self.momentum[-1]:
+                self.momentum[-1][k] *= 0
 
         # Initialize weight
         def instantiate_weights(input_size, output_size):

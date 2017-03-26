@@ -15,7 +15,7 @@ class SGD(OptimizerBase):
     """ Stochastic Gradient Descent (SGD) optimizer """
 
     def __init__(self, network, learning_rate = 0.01,
-                 iterations = -1, l2_regularize = True):
+                 iterations = -1, l2_regularize = True, momentum = 0.0):
         """__init__
 
         :param network: the network to optimize
@@ -26,6 +26,7 @@ class SGD(OptimizerBase):
         self.learning_rate = learning_rate
         self.iterations = iterations
         self.l2_regularize = l2_regularize
+        self.momentum = momentum
 
     def optimize(self):
         i = 1
@@ -45,7 +46,9 @@ class SGD(OptimizerBase):
                     grad = net.grads[j][k]
                     if self.l2_regularize:
                         grad += net.params[j][k]
-                    net.params[j][k] -= lr * grad
+                    net.momentum[j][k] = \
+                        self.momentum * net.momentum[j][k] - lr * grad
+                    net.params[j][k] += net.momentum[j][k]
 
             i += 1
             if i > self.iterations and self.iterations != -1:
