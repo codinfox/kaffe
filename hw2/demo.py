@@ -10,6 +10,10 @@ net = Network([
         '/Users/zhli/Projects/kaffe/MNIST/MNIST_train.txt'),
     layers.FullyConnectedLayer(100),
     layers.ReLUActivationLayer(),
+    layers.DropoutLayer(),
+    layers.FullyConnectedLayer(100),
+    layers.ReLUActivationLayer(),
+    layers.DropoutLayer(),
     layers.FullyConnectedLayer(10),
     layers.SoftmaxWithCrossEntropyLossLayer()
     ])
@@ -44,6 +48,10 @@ test_net = Network([
     layers.MNISTDataLayer(test_set_path, shuffle = False, batch_size = 1),
     layers.FullyConnectedLayer(100),
     layers.ReLUActivationLayer(),
+    layers.DropoutLayer(test = True),
+    layers.FullyConnectedLayer(100),
+    layers.ReLUActivationLayer(),
+    layers.DropoutLayer(test = True),
     layers.FullyConnectedLayer(10),
     layers.SoftmaxLayer()
     ])

@@ -274,3 +274,29 @@ class ReLUActivationLayer(LayerBase):
 
     def backward(self, top):
         return top * (self.input > 0.0).astype(np.float)
+
+
+class DropoutLayer(LayerBase):
+    """ DropoutLayer """
+
+    def __init__(self, rate = 0.5, test = False):
+        self.mask = None
+        self.rate = 0.5
+        self.test = test
+
+    def setup(self, bottom_shape, params, grads):
+        return bottom_shape
+
+    def forward(self, bottom):
+        out = None
+        if not self.test:
+            self.mask = (np.random.rand(*bottom.shape) > self.rate).astype(np.float)
+            out = bottom * self.mask
+        else:
+            out = bottom * (1.0 - self.rate)
+
+        return out
+
+    def backward(self, top):
+        return self.mask * top
+
