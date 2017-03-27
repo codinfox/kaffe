@@ -103,17 +103,17 @@ class TestFullyConnectedLayer(TestBase):
 
     def testGradientX(self):
         layer = layers.FullyConnectedLayer(10)
-        bottom_shape = (10,4)
+        bottom_shape = (10,4,2,2)
         self.checkGradient(layer, bottom_shape)
 
     def testGradientW(self):
         layer = layers.FullyConnectedLayer(10)
-        bottom_shape = (10,4)
+        bottom_shape = (10,4,2,2)
         self.checkGradient(layer, bottom_shape, 'W')
 
     def testGradientb(self):
         layer = layers.FullyConnectedLayer(10)
-        bottom_shape = (10,4)
+        bottom_shape = (10,4,2,2)
         self.checkGradient(layer, bottom_shape, 'b')
 
 class TestSigmoidActivationLayer(TestBase):
@@ -122,21 +122,6 @@ class TestSigmoidActivationLayer(TestBase):
         layer = layers.SigmoidActivationLayer()
         bottom_shape = (10, 1)
         self.checkGradient(layer, bottom_shape)
-
-# class TestSoftmaxLayer(TestBase):
-#
-#     def testGradientX(self):
-#         layer = layers.SoftmaxLayer()
-#         bottom_shape = (10, 1)
-#         self.checkGradient(layer, bottom_shape)
-#
-
-# class TestCrossEntropy(TestBase):
-#
-#     def testGradientX(self):
-#         layer = layers.CrossEntropyLossLayer()
-#         bottom_shape = (10, 1)
-#         self.checkGradient(layer, bottom_shape)
 
 class TestSoftmaxWithCrossEntropyLossLayer(TestBase):
 

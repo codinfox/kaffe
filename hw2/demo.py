@@ -41,7 +41,7 @@ plt.show()
 # testing
 test_set_path = '/Users/zhli/Projects/kaffe/MNIST/MNIST_test.txt'
 test_net = Network([
-    layers.MNISTDataLayer(test_set_path, shuffle = False),
+    layers.MNISTDataLayer(test_set_path, shuffle = False, batch_size = 1),
     layers.FullyConnectedLayer(100),
     layers.ReLUActivationLayer(),
     layers.FullyConnectedLayer(10),
