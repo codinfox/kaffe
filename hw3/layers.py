@@ -300,3 +300,105 @@ class DropoutLayer(LayerBase):
     def backward(self, top):
         return self.mask * top
 
+
+class ConvolutionLayer(LayerBase):
+    """ Convolution Layer
+    shape: (batch_size, channel, height, width)
+    """
+
+    def __init__(self, kernel_num, kernel_size = 3, pad = 0, stride = 1):
+        """__init__
+
+        :param kernel_num: number of kernels
+        :param kernel_size: size of the kernels
+        :param pad: padding
+        :param stride: stride
+        """
+        self.kernel_num = kernel_num
+        self.kernel_size = kernel_size
+        self.pad = pad
+        self.stride = stride
+        self.bottom_shape = None
+        self.top_shape = None
+        self.padded_input = None
+
+        self.params = None
+        self.grads = None
+
+    def setup(self, bottom_shape, params, grads):
+        # batch_size (bsz), channel (c), height (h), width (w)
+        bsz, c, h, w = bottom_shape
+        ks = self.kernel_size
+        kn = self.kernel_num
+        self.bottom_shape = bottom_shape
+
+        params['W'] = np.zeros((kn, c, ks, ks))
+        params['b'] = np.zeros((kn,))
+        self.params = params
+
+        grads['W'] = np.zeros((kn, c, ks, ks))
+        grads['b'] = np.zeros((kn,))
+        self.grads = grads
+
+        new_h = (h + 2 * self.pad - ks + self.stride) / self.stride
+        new_w = (w + 2 * self.pad - ks + self.stride) / self.stride
+        self.top_shape = (bsz, kn, int(new_h), int(new_w))
+
+        return self.top_shape
+
+    def forward(self, bottom):
+        W = self.params['W']
+        b = self.params['b']
+
+        pad = self.pad
+        padded = np.pad(bottom,
+                        pad_width=((0,0), (0,0), (pad,pad), (pad,pad)),
+                        mode='constant', constant_values=0)
+        bsz, c, h, w = padded.shape
+        ks = self.kernel_size
+        sd = self.stride
+        kn = self.kernel_num
+
+        output = np.zeros(self.top_shape)
+
+        for bb in range(bsz):
+            for hh in range(0, h - ks + 1, sd):
+                for ww in range(0, w - ks + 1, sd):
+                    for nn in range(kn):
+                        output[bb, nn, int(hh/sd), int(ww/sd)] = \
+                            bottom[bb, :, hh:hh+ks, ww:ww+ks] \
+                                .reshape(-1).dot(W[nn,:,:,:].reshape(-1))+b[nn]
+
+        self.padded_input = padded
+        return output
+
+    def backward(self, top):
+        W = self.params['W']
+
+        bsz, c, h, w = self.bottom_shape
+        pad = self.pad
+        ks = self.kernel_size
+        sd = self.stride
+        kn = self.kernel_num
+        input_padded = self.padded_input
+
+        dx_padded = np.zeros((bsz, c, h+2*pad, w+2*pad))
+        dW = np.zeros(W.shape)
+        db = np.zeros((kn,))
+
+        for bb in range(bsz):
+            for hh in range(0, h - ks + 1, sd):
+                for ww in range(0, w - ks + 1, sd):
+                    for nn in range(kn):
+                        dx_padded[bb, :, hh:hh+ks, ww:ww+ks] += \
+                            top[bb, nn, int(hh/sd), int(ww/sd)] * W[nn,:,:,:]
+                        dW[nn,:,:,:] += top[bb, nn, int(hh/sd), int(ww/sd)] * \
+                            input_padded[bb, :, hh:hh+ks, ww:ww+ks]
+                        db[nn] += top[bb, nn, int(hh/sd), int(ww/sd)]
+
+        dx = dx_padded[:, :, pad:h+pad, pad:w+pad]
+
+        self.grads['W'] = dW
+        self.grads['b'] = db
+
+        return dx
